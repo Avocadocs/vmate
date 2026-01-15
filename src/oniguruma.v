@@ -1,4 +1,4 @@
-module vmate5
+module vmate
 
 import prantlf.onig { RegEx }
 
@@ -37,41 +37,41 @@ pub fn onig_scanner(patterns []string) OnigScanner {
 }
 
 pub fn (mut os OnigScanner) find_next_match_sync(text string, position int, scanner &Scanner) ?OnigMatch {
-    mut best_location := int(1e9)
-    mut best_result := ?OnigMatch(none)
+	mut best_location := int(1e9)
+	mut best_result := ?OnigMatch(none)
 
-    for i, mut re in os.patterns {
-        // Search from current position
-	    match_ := re.search_within(text, position, text.len, onig.opt_none ) or { continue }
+	for i, mut re in os.patterns {
+		// Search from current position
+		match_ := re.search_within(text, position, text.len, onig.opt_none) or { continue }
 
-        location := match_.groups[0].start
+		location := match_.groups[0].start
 
-        // Rule 1: Earliest match wins. 
-        // Rule 2: If locations are tied, the first rule in the loop stays (Implicit).
-        if best_result == none || location < best_location {
-            best_location = location
-            
-            mut capture_indices := []OnigGroup{}
-            for j, capt in match_.groups {
-                capture_indices << OnigGroup{
-                    index: j
-                    start: capt.start
-                    end:   capt.end
-                }
-            }
+		// Rule 1: Earliest match wins.
+		// Rule 2: If locations are tied, the first rule in the loop stays (Implicit).
+		if best_result == none || location < best_location {
+			best_location = location
 
-            best_result = OnigMatch{
-                index:           i
-                capture_indices: capture_indices
-                scanner:         scanner
-            }
-        }
+			mut capture_indices := []OnigGroup{}
+			for j, capt in match_.groups {
+				capture_indices << OnigGroup{
+					index: j
+					start: capt.start
+					end:   capt.end
+				}
+			}
 
-        // Optimization: If it matches exactly at the current position, 
-        // no subsequent rule can start earlier. Break immediately.
-        if location == position {
-            break
-        }
-    }
-    return best_result
+			best_result = OnigMatch{
+				index:           i
+				capture_indices: capture_indices
+				scanner:         scanner
+			}
+		}
+
+		// Optimization: If it matches exactly at the current position,
+		// no subsequent rule can start earlier. Break immediately.
+		if location == position {
+			break
+		}
+	}
+	return best_result
 }

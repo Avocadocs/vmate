@@ -1,5 +1,4 @@
-
-module vmate5
+module vmate
 
 import prantlf.onig { RegEx }
 
@@ -36,10 +35,10 @@ struct GrammarOptions {
 	folding_stop_marker string
 	max_tokens_per_line int
 	max_line_length     int
-	patterns         []PatternOptions
-	repository       map[string]PatternOptions
-	first_line_match string
-	content_regex    string
+	patterns            []PatternOptions
+	repository          map[string]PatternOptions
+	first_line_match    string
+	content_regex       string
 }
 
 pub fn new_grammar(registry &GrammarRegistry, options GrammarOptions) Grammar {

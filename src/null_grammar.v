@@ -1,4 +1,4 @@
-module vmate5
+module vmate
 
 struct NullGrammar {
 	Grammar

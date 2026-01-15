@@ -1,4 +1,4 @@
-module vmate5
+module vmate
 
 import prantlf.onig as _
 
@@ -38,7 +38,7 @@ fn (mut s Scanner) create_scanner(first_line bool, position int, anchor_position
 			return regex
 		}
 	})
-	
+
 	return onig_scanner(patterns)
 }
 

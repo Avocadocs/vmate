@@ -1,4 +1,4 @@
-module vmate5
+module vmate
 
 import regex
 
@@ -64,13 +64,13 @@ pub struct PatternOptions {
 }
 
 fn has_back_referencess(pattern_string string) bool {
-    for i := 0; i < pattern_string.len - 1; i++ {
-        if pattern_string[i] == `\\` && pattern_string[i+1].is_digit() {
-            return true
-        }
-    }
+	for i := 0; i < pattern_string.len - 1; i++ {
+		if pattern_string[i] == `\\` && pattern_string[i + 1].is_digit() {
+			return true
+		}
+	}
 
-    return false
+	return false
 }
 
 pub fn new_pattern(mut grammar Grammar, mut registry GrammarRegistry, options PatternOptions) Pattern {
@@ -204,7 +204,6 @@ pub fn (mut p Pattern) resolve_back_references(line string, begin_captures_indic
 		} else {
 			begin_captures << line.substr(capture.start, capture.end)
 		}
-		
 	}
 
 	mut ree := regex.regex_opt(digit_re) or { panic(err) }
@@ -338,8 +337,7 @@ pub fn (mut p Pattern) handle_match(mut stack []&StackItem, line string, mut cap
 
 	if p.captures.keys().len > 0 {
 		mut io := capture_indices.clone()
-		t := p.tags_for_capture_indices(line, mut io, capture_indices, mut
-			stack)
+		t := p.tags_for_capture_indices(line, mut io, capture_indices, mut stack)
 		tags << t
 	} else {
 		start := capture_indices[0].start
@@ -378,12 +376,12 @@ pub fn (mut p Pattern) handle_match(mut stack []&StackItem, line string, mut cap
 
 pub fn (mut p Pattern) tags_for_capture_rule(mut rule Rule, line string, capture_start int, capture_end int, mut stack []&StackItem) []int {
 	capture_text := line.substr(capture_start, capture_end)
-	
+
 	mut sub_stack := stack.clone()
-    sub_stack << &StackItem{
-        rule: rule
-    }
-	
+	sub_stack << &StackItem{
+		rule: rule
+	}
+
 	tags := rule.grammar.tokenize_line(capture_text, mut sub_stack, false, true, false)
 
 	mut open_scopes := []int{}
@@ -451,7 +449,8 @@ pub fn (mut p Pattern) tags_for_capture_indices(line string, mut current_capture
 				tags << child_capture.start - previous_child_capture_end
 			}
 
-			tags << p.tags_for_capture_indices(line, mut current_capture_indices, all_capture_indices, mut stack)
+			tags << p.tags_for_capture_indices(line, mut current_capture_indices, all_capture_indices, mut
+				stack)
 			previous_child_capture_end = child_capture.end
 		}
 

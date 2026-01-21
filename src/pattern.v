@@ -45,7 +45,7 @@ mut:
 
 pub struct PatternOptions {
 	name         string
-	content_name string @[json: 'scopeName']
+	content_name string @[json: 'contentName']
 
 	match_ string @[json: 'match']
 	begin  string

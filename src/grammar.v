@@ -117,10 +117,10 @@ pub fn (mut g Grammar) tokenize_line(input_line string, mut rule_stack []&StackI
 		if compatibility_mode {
 			for item in rule_stack {
 				if item.scope_name != '' {
-					open_scope_tags << g.registry.start_id_for_scope(item.scope_name)
+					open_scope_tags << item.scope_name.split(' ').map(g.registry.start_id_for_scope(it))
 				}
 				if item.content_scope_name != '' {
-					open_scope_tags << g.registry.start_id_for_scope(item.content_scope_name)
+					open_scope_tags << item.content_scope_name.split(' ').map(g.registry.start_id_for_scope(it))
 				}
 			}
 		}
@@ -134,10 +134,10 @@ pub fn (mut g Grammar) tokenize_line(input_line string, mut rule_stack []&StackI
 			content_scope_name: g.initial_rule.content_scope_name
 		}]
 		if g.initial_rule.scope_name != '' {
-			tags << g.start_id_for_scope(g.initial_rule.scope_name)
+			tags << g.initial_rule.scope_name.split(' ').map(g.start_id_for_scope(it))
 		}
 		if g.initial_rule.content_scope_name != '' {
-			tags << g.start_id_for_scope(g.initial_rule.content_scope_name)
+			tags << g.initial_rule.content_scope_name.split(' ').map(g.start_id_for_scope(it))
 		}
 	}
 
@@ -189,10 +189,10 @@ pub fn (mut g Grammar) tokenize_line(input_line string, mut rule_stack []&StackI
 				if rule_stack.len > 1 {
 					ab := rule_stack.pop()
 					if ab.content_scope_name != '' {
-						tags << g.end_id_for_scope(ab.content_scope_name)
+						tags << ab.content_scope_name.split(' ').map(g.end_id_for_scope(it))
 					}
 					if ab.scope_name != '' {
-						tags << g.end_id_for_scope(ab.scope_name)
+						tags << ab.scope_name.split(' ').reverse().map(g.end_id_for_scope(it))
 					}
 				} else {
 					if position < line.len || (line.len == 0 && tags.len == 0) {

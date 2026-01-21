@@ -328,11 +328,11 @@ pub fn (mut p Pattern) handle_match(mut stack []&StackItem, line string, mut cap
 		}
 		content_scope_name := stack.last().content_scope_name
 		if content_scope_name != '' {
-			tags << p.grammar.end_id_for_scope(content_scope_name)
+			tags << content_scope_name.split(' ').reverse().map(p.grammar.end_id_for_scope(it))
 		}
 	} else if p.scope_name != '' {
 		scope_name = p.resolve_scope_name(p.scope_name, line, capture_indices)
-		tags << p.grammar.start_id_for_scope(scope_name)
+		tags << scope_name.split(' ').map(p.grammar.start_id_for_scope(it))
 	}
 
 	if p.captures.keys().len > 0 {
@@ -354,7 +354,7 @@ pub fn (mut p Pattern) handle_match(mut stack []&StackItem, line string, mut cap
 		content_scope_name := rule_to_push.content_scope_name
 		if content_scope_name != '' {
 			csn := p.resolve_scope_name(content_scope_name, line, capture_indices)
-			tags << p.grammar.start_id_for_scope(csn)
+			tags << csn.split(' ').map(p.grammar.start_id_for_scope(it))
 		}
 		stack << &StackItem{
 			rule:               &rule_to_push
@@ -367,7 +367,7 @@ pub fn (mut p Pattern) handle_match(mut stack []&StackItem, line string, mut cap
 			scope_name = stack.pop().scope_name
 		}
 		if scope_name != '' {
-			tags << p.grammar.end_id_for_scope(scope_name)
+			tags << scope_name.split(' ').reverse().map(p.grammar.end_id_for_scope(it))
 		}
 	}
 
@@ -421,7 +421,7 @@ pub fn (mut p Pattern) tags_for_capture_indices(line string, mut current_capture
 		scope := unsafe { p.captures[parent_capture.index.str()].name }
 		if scope != '' {
 			parent_capture_scope = p.resolve_scope_name(scope, line, all_capture_indices)
-			tags << p.grammar.start_id_for_scope(parent_capture_scope)
+			tags << parent_capture_scope.split(' ').map(p.grammar.start_id_for_scope(it))
 		}
 	}
 
@@ -461,7 +461,7 @@ pub fn (mut p Pattern) tags_for_capture_indices(line string, mut current_capture
 
 	if parent_capture_scope != '' {
 		if tags.len > 1 {
-			tags << p.grammar.end_id_for_scope(parent_capture_scope)
+			tags << parent_capture_scope.split(' ').reverse().map(p.grammar.end_id_for_scope(it))
 		} else {
 			tags.pop()
 		}

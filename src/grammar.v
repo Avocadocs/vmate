@@ -209,7 +209,7 @@ pub fn (mut g Grammar) tokenize_line(input_line string, mut rule_stack []&StackI
 					pop_stack = true
 				}
 
-				if last_rule.scope_name == penultimate_rule.scope_name {
+				if last_rule.scope_name != '' && last_rule.scope_name == penultimate_rule.scope_name {
 					pop_stack = true
 				}
 

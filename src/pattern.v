@@ -2,7 +2,7 @@ module vmate
 
 import regex
 
-const all_custom_capture_indices_re = r'($(\d+))|($(\d+):/((downcase)|(upcase)))'
+const all_custom_capture_indices_re = r'([$](\d+))|([$]\{(\d+):/((downcase)|(upcase)))'
 const digit_re = r'\\\d+'
 
 struct Capture {
@@ -266,23 +266,24 @@ pub fn (mut p Pattern) get_included_patterns(base_grammar &Grammar, mut included
 pub fn (mut p Pattern) resolve_scope_name(scope_name string, line string, capture_indices []OnigGroup) string {
 	mut re := regex.regex_opt(all_custom_capture_indices_re) or { panic(err) }
 
-	return re.replace_by_fn(scope_name, fn [line, capture_indices] (re regex.RE, in_txt string, _ int, _ int) string {
+	return re.replace_by_fn(scope_name, fn [line, capture_indices, scope_name] (re regex.RE, in_txt string, _ int, _ int) string {
 		// group 1 → $1
-		// group 2 → ${1:...}
-		// group 3 → command
+		// group 3 → ${1:...}
+		// group 5 → command
 
 		mut capture_index := -1
 		mut command := ''
 
-		g1 := re.get_group_by_id(in_txt, 1)
-		g2 := re.get_group_by_id(in_txt, 2)
-		g3 := re.get_group_by_id(in_txt, 3)
+		g := re.get_group_list()
+		g1 := g[1]
+		g2 := g[3]
+		g3 := g[5]
 
-		if g1.len > 0 {
-			capture_index = g1.int()
-		} else if g2.len > 0 {
-			capture_index = g2.int()
-			command = g3
+		if g1.end > g1.start {
+			capture_index = scope_name.substr(g1.start, g1.end).int()
+		} else if g2.end > g2.start {
+			capture_index = scope_name.substr(g2.start, g2.end).int()
+			command = scope_name.substr(g3.start, g3.end)
 		} else {
 			return re.get_group_by_id(in_txt, 0)
 		}

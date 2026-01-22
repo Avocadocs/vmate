@@ -325,7 +325,7 @@ fn (g Grammar) get_max_tokens_per_line() int {
 	return g.max_tokens_per_line
 }
 
-fn (mut g Grammar) scopes_from_stack(stack []&Rule, rule &Rule, end_pattern_match bool) []string {
+fn (mut g Grammar) scopes_from_stack(stack []&StackItem, rule &Rule, end_pattern_match bool) []string {
 	mut scopes := []string{}
 
 	for item in stack {
@@ -337,7 +337,7 @@ fn (mut g Grammar) scopes_from_stack(stack []&Rule, rule &Rule, end_pattern_matc
 		}
 	}
 
-	if end_pattern_match && rule.content_scope_name != '' && rule == stack.last() {
+	if end_pattern_match && rule.content_scope_name != '' && rule == stack.last().rule {
 		scopes.pop()
 	}
 

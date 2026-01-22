@@ -5,7 +5,7 @@ import os
 
 @[heap]
 pub struct GrammarRegistry {
-mut:
+pub mut:
 	max_tokens_per_line       int
 	max_line_length           int
 	null_grammar              NullGrammar
@@ -35,6 +35,9 @@ pub fn (gr &GrammarRegistry) grammar_for_scope_name(scope_name string) ?&Grammar
 pub fn (mut gr GrammarRegistry) add_grammar(grammar Grammar) {
 	gr.grammars << &grammar
 	gr.grammars_by_scope_name[grammar.scope_name] = &grammar
+	if grammar.injection_selector != none {
+		gr.injection_grammars << &grammar
+	}
 }
 
 pub fn (mut gr GrammarRegistry) remove_grammar(grammar Grammar) {

@@ -14,10 +14,11 @@ mut:
 	end_pattern            ?Pattern
 	apply_end_pattern_last bool
 
-	scanners_by_base_grammar_name map[string]&Scanner
-	create_end_pattern            ?Pattern
+	scanners_by_base_grammar_name map[string]&Scanner @[str: skip]
+	create_end_pattern            ?Pattern            @[str: skip]
 
 	anchor_position int = -1
+	injections      Injections
 }
 
 pub struct RuleOptions {
@@ -89,6 +90,19 @@ pub fn (mut r Rule) get_scanner(base_grammar &Grammar) &Scanner {
 	return &scanner
 }
 
+pub fn (mut r Rule) scan_injections(rule_stack []&StackItem, line string, position int, first_line bool) ?OnigMatch {
+	base_grammar := rule_stack[0].rule.grammar
+	if mut injections := base_grammar.injections {
+		for mut scanner in injections.get_scanners(rule_stack) {
+			if result := scanner.find_next_match(line, first_line, position, r.anchor_position) {
+				return result
+			}
+		}
+	}
+
+	return none
+}
+
 pub fn (mut r Rule) normalize_capture_indices(line string, capture_indices []OnigGroup) []OnigGroup {
 	line_length := line.len
 
@@ -106,40 +120,54 @@ pub fn (mut r Rule) normalize_capture_indices(line string, capture_indices []Oni
 }
 
 pub fn (mut r Rule) find_next_match(mut rule_stack []&StackItem, line_with_new_line string, position int, first_line bool) ?OnigMatch {
-	base_grammar := rule_stack[0].rule.grammar
+	mut base_grammar := rule_stack[0].rule.grammar
 	mut results := []OnigMatch{}
 
-	mut scanner := r.get_scanner(base_grammar)
-	if result := scanner.find_next_match(line_with_new_line, first_line, position, r.anchor_position) {
-		results << result
+	mut main_scanner := r.get_scanner(base_grammar)
+	if res := main_scanner.find_next_match(line_with_new_line, first_line, position, r.anchor_position) {
+		results << res
 	}
 
-	if results.len > 1 {
-		mut best_match := results[0]
-		mut min_start := r.normalize_capture_indices(line_with_new_line, results[0].capture_indices)[0].start
+	if mut injections := base_grammar.injections {
+		scopes := base_grammar.scopes_from_stack(rule_stack, &Rule{}, false)
 
-		for i := 1; i < results.len; i++ {
-			current_start := r.normalize_capture_indices(line_with_new_line, results[i].capture_indices)[0].start
-
-			if current_start < min_start {
-				min_start = current_start
-				best_match = OnigMatch{
-					index:           results[i].index
-					capture_indices: r.normalize_capture_indices(line_with_new_line, results[i].capture_indices)
-					scanner:         &results[i].scanner
+		for mut inj in injections.injections {
+			if inj.selector.matches(scopes) {
+				mut scanner := injections.get_scanner(mut inj)
+				if res := scanner.find_next_match(line_with_new_line, first_line, position,
+					r.anchor_position)
+				{
+					// Check priority
+					if inj.selector.get_prefix(scopes) == 'L' {
+						results.prepend(res) // Left priority wins at same position
+					} else {
+						results << res
+					}
 				}
 			}
 		}
-		return best_match
-	} else if results.len == 1 {
-		return OnigMatch{
-			index:           results[0].index
-			capture_indices: r.normalize_capture_indices(line_with_new_line, results[0].capture_indices)
-			scanner:         results[0].scanner
+	}
+
+	if results.len == 0 {
+		return none
+	}
+
+	mut best := results[0]
+	mut best_start := best.capture_indices[0].start
+
+	for i := 1; i < results.len; i++ {
+		current_start := results[i].capture_indices[0].start
+		if current_start < best_start {
+			best_start = current_start
+			best = results[i]
 		}
 	}
 
-	return none
+	return OnigMatch{
+		index:           best.index
+		capture_indices: r.normalize_capture_indices(line_with_new_line, best.capture_indices)
+		scanner:         best.scanner
+	}
 }
 
 struct TagsResult {

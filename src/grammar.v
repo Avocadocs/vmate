@@ -25,7 +25,11 @@ mut:
 
 	raw_patterns   []PatternOptions
 	raw_repository map[string]PatternOptions
+	raw_injections map[string]PatternOptions
 	path           string
+
+	injections         ?Injections
+	injection_selector ?ScopeSelector
 }
 
 struct GrammarOptions {
@@ -39,9 +43,17 @@ struct GrammarOptions {
 	repository          map[string]PatternOptions
 	first_line_match    string
 	content_regex       string
+	injections          map[string]PatternOptions
+	injection_selector  string @[json: 'injectionSelector']
 }
 
 pub fn new_grammar(registry &GrammarRegistry, options GrammarOptions) Grammar {
+	injection_selector := if options.injection_selector != '' {
+		new_scope_selector(options.injection_selector) or { panic(err) }
+	} else {
+		none
+	}
+
 	first_line_match := if options.first_line_match != '' {
 		onig.onig_new(options.first_line_match, onig.opt_none) or { panic(err) }
 	} else {
@@ -63,9 +75,10 @@ pub fn new_grammar(registry &GrammarRegistry, options GrammarOptions) Grammar {
 		folding_stop_marker: options.folding_stop_marker
 		first_line_regex:    first_line_match
 		content_regex:       content_regex
-
-		raw_patterns:   options.patterns
-		raw_repository: options.repository
+		injection_selector:  injection_selector
+		raw_patterns:        options.patterns
+		raw_repository:      options.repository
+		raw_injections:      options.injections
 	}
 
 	grammar.update_rules()
@@ -265,6 +278,7 @@ fn (mut g Grammar) update_rules() {
 		patterns:   g.raw_patterns
 	)
 	g.repository = g.create_repository()
+	g.injections = new_injections(mut g, g.raw_injections)
 }
 
 fn (g Grammar) get_initial_rule() Rule {
